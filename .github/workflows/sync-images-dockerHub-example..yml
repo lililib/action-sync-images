@@ -6,32 +6,25 @@ run-name: ${{ github.actor }} is Sync Images to DockerHub.
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# 工作流程任务（通常含有一个或多个步骤）
+# 工作流任务
 jobs:
   syncimages:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Repos
+    - name: Checkout Repository
       uses: actions/checkout@v3
-      
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2.9.1
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v2.2.0
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
-        logout: false
-        
-    - name: Use Skopeo Tools Sync Image to Docker Hub
+    - name: Install Skopeo
       run: |
-        #!/usr/bin/env bash
-        skopeo copy docker://gcr.io/kaniko-project/executor:v1.13.0 docker://bot-cn-north-1.jcr.service.jdcloud.com/kaniko-executor:v1.13.0
- 
+        sudo apt-get update -y
+        sudo apt-get install -y skopeo
+    # 添加 JDCloud 登录步骤
+    - name: Login to JDCloud Docker Registry
+      run: |
+        echo "${{ secrets.JDCLOUD_PASSWORD }}" | docker login --username ${{ secrets.JDCLOUD_USERNAME }} --password-stdin bot-cn-north-1.jcr.service.jdcloud.com
+    - name: Sync Image to JDCloud
+      run: |
+        skopeo copy docker://gcr.io/kaniko-project/executor:v1.13.0 docker://bot-cn-north-1.jcr.service.jdcloud.com/your-namespace/kaniko-executor:v1.13.0
